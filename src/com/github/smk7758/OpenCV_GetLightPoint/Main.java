@@ -26,7 +26,7 @@ public class Main {
 		VideoCaptureFileBuilder vcb = new VideoCaptureFileBuilder(
 				"S:\\old_program\\2019-01-11_GetLightPoint\\IMG_1083.MP4");
 		VideoCapture vc = VideoCaptureCreater.generateVideoCapture(vcb);
-		VideoWriter vw = new VideoWriter("S:\\old_program\\2019-01-11_GetLightPoint\\0003.MP4", 32,
+		VideoWriter vw = new VideoWriter("S:\\old_program\\2019-01-11_GetLightPoint\\0005.MP4", 32,
 				vc.get(Videoio.CV_CAP_PROP_FPS),
 				new Size(vc.get(Videoio.CAP_PROP_FRAME_WIDTH), vc.get(Videoio.CAP_PROP_FRAME_HEIGHT)));
 
@@ -35,19 +35,21 @@ public class Main {
 		Mat light = new Mat();
 
 		Mat result = new Mat();
+		Mat resultForWrite = new Mat();
 		vc.read(result);
-		result.convertTo(result, CvType.CV_32SC3);
+		result.convertTo(result, CvType.CV_32FC3);
 
 		while (vc.read(mat)) {
 			Imgproc.cvtColor(mat, gray, Imgproc.COLOR_BGR2GRAY);
 
 			Imgproc.threshold(gray, gray, 125, 255, Imgproc.THRESH_BINARY); // 光の部分を取得 => gray
 
-			light = exceptPrevention(mat, gray);
+			exceptPrevention(mat, gray).convertTo(light, CvType.CV_32FC3);
+			Imgproc.accumulateWeighted(light, result, 0.25); // 軌跡を残すようにするもの
+			result.convertTo(resultForWrite, CvType.CV_8UC3);
+			vw.write(resultForWrite);
 
-			Imgproc.accumulateWeighted(light, result, 0.5); // 軌跡を残すようにするもの
-
-			vw.write(result);
+			// vw.write(exceptPrevention(mat, gray)); //残像効果なし
 		}
 
 		vc.release();
